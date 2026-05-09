@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WGSS Online Exam</title>
+<style>
+body { margin:0; font-family:Arial, sans-serif; background:#eef1f7; }
+header { background:#1a3d8f; color:#fff; padding:10px 20px; display:flex; align-items:center; }
+header img { height:50px; margin-right:10px; }
+header h1 { margin:0; font-size:20px; }
+.container {
+  max-width:900px; margin:20px auto; background:#fff; padding:20px;
+  border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.15);
+}
+h2 { margin-top:0; color:#1a3d8f; }
+.field { margin-bottom:10px; }
+label { display:block; font-size:13px; margin-bottom:3px; }
+input[type="text"], input[type="password"] {
+  width:100%; padding:7px; border-radius:4px; border:1px solid #bbb; box-sizing:border-box;
+  font-size:13px;
+}
+button {
+  background:#1a3d8f; color:#fff; border:none;
+  padding:7px 14px; border-radius:4px; cursor:pointer;
+  font-size:13px; margin:3px 2px;
+}
+button.danger { background:#b91c1c; }
+button.secondary { background:#4b5563; }
+.hidden { display:none; }
+.question-block {
+  margin-bottom:15px; padding:10px; border-radius:6px;
+  border:1px solid #ddd; background:#f9fafb;
+}
+.question-title { font-weight:bold; margin-bottom:5px; }
+.options { margin-left:15px; }
+.options label { display:block; margin-bottom:3px; }
+#timerBox { float:right; font-weight:bold; color:#b91c1c; }
+#infoBox { font-size:13px; margin-bottom:10px; color:#374151; }
+#loginError, #examMsg { font-size:13px; color:red; margin-top:5px; }
+
+/* FLAG PANEL */
+#flagPanel {
+  position:fixed; right:20px; top:120px; width:120px; background:#fff;
+  border:1px solid #ccc; padding:10px; border-radius:8px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.15);
+}
+.flag-btn {
+  width:30px; height:30px; margin:3px; border-radius:4px;
+  border:1px solid #999; cursor:pointer;
+}
+.flagged { background:#facc15 !important; }
+.answered { background:#16a34a !important; }
+.unanswered { background:#e5e7eb !important; }
+</style>
+</head>
+<body>
+<header>
+  <img src="wolkite.jpeg" alt="Logo">
+  <h1>Wolkite Online Exam</h1>
+</header>
+
+<!-- LOGIN -->
+<div id="loginSection" class="container">
+  <h2>Student Login</h2>
+  <div class="field">
+    <label>Username</label>
+    <input type="text" id="loginUser">
+  </div>
+  <div class="field">
+    <label>Password</label>
+    <div style="display:flex;align-items:center;">
+      <input type="password" id="loginPass" style="flex:1;">
+      <button type="button" onclick="toggleLoginPassword()" style="margin-left:5px;">👁</button>
+    </div>
+  </div>
+  <button onclick="studentLogin()">Login</button>
+  <p id="loginError"></p>
+</div>
+
+<!-- EXAM -->
+<div id="examSection" class="container hidden">
+  <div style="overflow:hidden;">
+    <h2 style="float:left;">Exam</h2>
+    <div id="timerBox">Time: 00:00</div>
+  </div>
+  <div style="clear:both;"></div>
+  <div id="infoBox"></div>
+
+  <div id="flagPanel" class="hidden">
+    <h4 style="margin:0 0 10px 0;">Flags</h4>
+    <div id="flagButtons"></div>
+  </div>
+
+  <form id="examForm" onsubmit="submitExam(event)">
+    <div id="questionsContainer"></div>
+    <div style="text-align:center;margin-top:15px;">
+      <button type="submit" disabled>Submit Exam</button>
+    </div>
+    <p id="examMsg"></p>
+  </form>
+</div>
+
+<script>
+/* ===========================
+ANTI-CHEAT PROTECTION
+=========================== */
+window.onbeforeunload = function () {
+  return "You cannot leave the exam until you submit.";
+};
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("keydown", function(e) {
+  if (
+    e.key === "F5" ||
+    (e.ctrlKey && e.key.toLowerCase() === "r") ||
+    (e.ctrlKey && e.key.toLowerCase() === "w") ||
+    (e.ctrlKey && e.key.toLowerCase() === "n") ||
+    (e.ctrlKey && e.key.toLowerCase() === "t")
+  ) {
+    e.preventDefault();
+  }
+});
+document.addEventListener("visibilitychange", function() {
+  if (document.hidden) {
+    alert("Do not switch tabs during the exam!");
+  }
+});
+
+/* ===========================
+DATA VARIABLES
+=========================== */
+let students = [];
+let questions = [];
+let markSettings = { tfMark:1, mcMark:1 };
+let examSettings = { grade:"", subject:"", duration:40 };
+let currentStudent = null;
+let examQuestions = [];
+let timerSeconds = 0;
+let timerInterval = null;
+let currentIndex = 0;
+let studentAnswers = [];
+let flagged = [];
+let savedState = null;
+
+/* ===========================
+PASSWORD TOGGLE
+=========================== */
+function toggleLoginPassword() {
+  const p = document.getElementById("loginPass");
+  p.type = (p.type === "password") ? "text" : "password";
+}
+
+/* ===========================
+LOAD DATA
+=========================== */
+function loadData() {
+  students = JSON.parse(localStorage.getItem("wgss_students") || "[]");
+  questions = JSON.parse(localStorage.getItem("wgss_questions") || "[]");
+  markSettings = JSON.parse(localStorage.getItem("wgss_mark_settings") || '{"tfMark":1,"mcMark":1}');
+  examSettings = JSON.parse(localStorage.getItem("wgss_exam_settings") || '{"grade":"","subject":"","duration":40}');
+}/* ===========================
+LOGIN
+=========================== */
+function studentLogin() {
+  loadData();
+
+  const u = loginUser.value.trim();
+  const p = loginPass.value.trim();
+  const err = loginError;
+  err.textContent = "";
+
+  if (!u || !p) {
+    err.textContent = "Enter username and password.";
+    return;
+  }
+
+  const stu = students.find(s => s.username === u && s.password === p);
+  if (!stu) {
+    err.textContent = "Invalid username or password.";
+    return;
+  }
+
+  if (!stu.active) {
+    err.textContent = "You are not active. Contact your teacher.";
+    return;
+  }
+
+  if (!examSettings.grade || !examSettings.subject || !examSettings.duration) {
+    err.textContent = "Exam is not configured. Contact your teacher.";
+    return;
+  }
+
+  if (String(stu.grade) !== String(examSettings.grade)) {
+    err.textContent = "This exam is not for your grade.";
+    return;
+  }
+
+  if (hasAlreadySubmitted(stu.username, examSettings.subject)) {
+    err.textContent = "You have already taken this exam.";
+    return;
+  }
+
+  /* LOAD SAVED STATE (RESUME FEATURE) */
+  const saved = JSON.parse(localStorage.getItem("wgss_exam_state") || "null");
+  if (saved && saved.username === stu.username && saved.subject === examSettings.subject) {
+    savedState = saved;
+  }
+
+  currentStudent = stu;
+  startExam();
+}
+
+/* ===========================
+CHECK IF STUDENT ALREADY SUBMITTED
+=========================== */
+function hasAlreadySubmitted(username, subject) {
+  const results = JSON.parse(localStorage.getItem("wgss_results") || "[]");
+  return results.some(r => r.username === username && r.subject === subject);
+}
+
+/* ===========================
+START EXAM
+=========================== */
+function startExam() {
+  loginSection.classList.add("hidden");
+  examSection.classList.remove("hidden");
+  flagPanel.classList.remove("hidden");
+
+  infoBox.textContent =
+    "Student: " + currentStudent.first + " " + currentStudent.father +
+    " | Username: " + currentStudent.username +
+    " | Grade: " + currentStudent.grade +
+    " | Section: " + (currentStudent.section || "") +
+    " | Subject: " + examSettings.subject +
+    " | Duration: " + examSettings.duration + " minutes";
+
+  buildExamQuestions();
+
+  if (examQuestions.length > 0) {
+    if (savedState) {
+      examQuestions = savedState.questions;
+      studentAnswers = savedState.answers;
+      flagged = savedState.flagged;
+      currentIndex = savedState.index;
+      timerSeconds = savedState.time;
+      savedState = null;
+    } else {
+      currentIndex = 0;
+      studentAnswers = new Array(examQuestions.length).fill("");
+      flagged = new Array(examQuestions.length).fill(false);
+      timerSeconds = examSettings.duration * 60;
+    }
+
+    renderQuestionPage();
+    renderFlagButtons();
+    startTimer();
+    updateSubmitState();
+  }
+}
+
+/* ===========================
+BUILD QUESTIONS
+=========================== */
+function buildExamQuestions() {
+  const all = questions.filter(q =>
+    String(q.grade) === String(examSettings.grade) &&
+    q.subject === examSettings.subject
+  );
+
+  if (all.length === 0) {
+    questionsContainer.innerHTML =
+      "<p style='color:red;'>No questions found for this exam. Contact your teacher.</p>";
+    examForm.querySelector("button[type='submit']").disabled = true;
+    return;
+  }
+
+  if (!savedState) {
+    examQuestions = shuffleArray(all.slice());
+  }
+}
+
+/* ===========================
+SAVE EXAM STATE (RESUME)
+=========================== */
+function saveExamState() {
+  if (!currentStudent || !examQuestions.length) return;
+
+  const state = {
+    username: currentStudent.username,
+    subject: examSettings.subject,
+    time: timerSeconds,
+    answers: studentAnswers,
+    index: currentIndex,
+    flagged: flagged,
+    questions: examQuestions
+  };
+
+  localStorage.setItem("wgss_exam_state", JSON.stringify(state));
+}
+
+/* ===========================
+RENDER QUESTION PAGE
+=========================== */
+function renderQuestionPage() {
+  const q = examQuestions[currentIndex];
+  const num = currentIndex + 1;
+
+  let html = `
+    <div class="question-block">
+      <div class="question-title">
+        Q${num}. ${q.question}
+        <button type="button" onclick="toggleFlag(${currentIndex})"
+          style="float:right;background:${flagged[currentIndex] ? '#facc15' : '#ddd'};color:#000;">
+          ⚑
+        </button>
+      </div>
+      <div class="options">
+  `;
+
+  if (q.type === "TF") {
+    html += `
+      <label><input type="radio" name="ans" value="T"> True</label>
+      <label><input type="radio" name="ans" value="F"> False</label>
+    `;
+  } else {
+    html += `
+      <label><input type="radio" name="ans" value="A"> A) ${q.A || ""}</label>
+      <label><input type="radio" name="ans" value="B"> B) ${q.B || ""}</label>
+      <label><input type="radio" name="ans" value="C"> C) ${q.C || ""}</label>
+      <label><input type="radio" name="ans" value="D"> D) ${q.D || ""}</label>
+    `;
+  }
+
+  html += `
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;margin-top:10px;">
+      <button type="button" onclick="prevQuestion()" ${currentIndex===0?'disabled':''}>Previous</button>
+      <button type="button" onclick="nextQuestion()" ${currentIndex===examQuestions.length-1?'disabled':''}>Next</button>
+    </div>
+
+    <div style="text-align:center;margin-top:8px;font-size:12px;color:#555;">
+      Question ${num} of ${examQuestions.length}
+    </div>
+  `;
+
+  questionsContainer.innerHTML = html;
+
+  if (studentAnswers[currentIndex]) {
+    const sel = document.querySelector(`input[name="ans"][value="${studentAnswers[currentIndex]}"]`);
+    if (sel) sel.checked = true;
+  }
+
+  document.querySelectorAll("input[name='ans']").forEach(r => {
+    r.addEventListener("change", () => {
+      studentAnswers[currentIndex] = r.value;
+      updateSubmitState();
+      renderFlagButtons();
+      saveExamState();
+    });
+  });
+}
+
+/* ===========================
+FLAG TOGGLE
+=========================== */
+function toggleFlag(i) {
+  flagged[i] = !flagged[i];
+  renderQuestionPage();
+  renderFlagButtons();
+  saveExamState();
+}
+
+/* ===========================
+FLAG PANEL BUTTONS
+=========================== */
+function renderFlagButtons() {
+  flagButtons.innerHTML = "";
+
+  examQuestions.forEach((q, i) => {
+    const btn = document.createElement("button");
+    btn.textContent = i + 1;
+    btn.className = "flag-btn";
+
+    if (flagged[i]) btn.classList.add("flagged");
+    else if (studentAnswers[i]) btn.classList.add("answered");
+    else btn.classList.add("unanswered");
+
+    btn.onclick = () => {
+      saveCurrentAnswer();
+      currentIndex = i;
+      renderQuestionPage();
+      renderFlagButtons();
+    };
+
+    flagButtons.appendChild(btn);
+  });
+}
+
+/* ===========================
+SAVE CURRENT ANSWER
+=========================== */
+function saveCurrentAnswer() {
+  const sel = document.querySelector("input[name='ans']:checked");
+  studentAnswers[currentIndex] = sel ? sel.value : "";
+  updateSubmitState();
+  saveExamState();
+}
+
+/* ===========================
+NEXT / PREVIOUS
+=========================== */
+function nextQuestion() {
+  saveCurrentAnswer();
+  if (currentIndex < examQuestions.length - 1) {
+    currentIndex++;
+    renderQuestionPage();
+    renderFlagButtons();
+    saveExamState();
+  }
+}
+
+function prevQuestion() {
+  saveCurrentAnswer();
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderQuestionPage();
+    renderFlagButtons();
+    saveExamState();
+  }
+}
+
+/* ===========================
+ENABLE SUBMIT ONLY WHEN ALL ANSWERED
+=========================== */
+function updateSubmitState() {
+  const btn = examForm.querySelector("button[type='submit']");
+  const allAnswered =
+    studentAnswers.length === examQuestions.length &&
+    studentAnswers.every(a => a && a !== "");
+
+  btn.disabled = !allAnswered;
+}/* ===========================
+TIMER + EXTRA TIME
+=========================== */
+function startTimer() {
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+
+    /* CHECK FOR EXTRA TIME FROM ADMIN */
+    const extra = parseInt(localStorage.getItem("wgss_exam_extra_time") || "0");
+    if (!isNaN(extra) && extra > 0) {
+      timerSeconds += extra * 60;
+      localStorage.removeItem("wgss_exam_extra_time");
+      alert("Extra time added: " + extra + " minutes.");
+      saveExamState();
+    }
+
+    timerSeconds--;
+
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      timerSeconds = 0;
+      updateTimerDisplay();
+      autoSubmitOnTimeUp();
+    } else {
+      updateTimerDisplay();
+      saveExamState();
+    }
+
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  timerBox.textContent =
+    "Time: " + String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+}
+
+/* ===========================
+AUTO SUBMIT WHEN TIME ENDS
+=========================== */
+function autoSubmitOnTimeUp() {
+  examMsg.style.color = "red";
+  examMsg.textContent = "Time is over. Submitting your exam...";
+  examForm.querySelector("button[type='submit']").disabled = false;
+
+  setTimeout(() => { submitExam(); }, 1000);
+}
+
+/* ===========================
+SUBMIT EXAM
+=========================== */
+function submitExam(e) {
+  if (e) e.preventDefault();
+
+  clearInterval(timerInterval);
+  saveCurrentAnswer();
+  window.onbeforeunload = null;
+
+  if (!currentStudent || examQuestions.length === 0) return;
+
+  const answers = [];
+  let score = 0;
+  let total = 0;
+
+  examQuestions.forEach((q, idx) => {
+    const ans = studentAnswers[idx] || "";
+    answers.push(ans);
+
+    if (q.type === "TF") {
+      total += markSettings.tfMark;
+      if (ans === q.correct) score += markSettings.tfMark;
+    } else {
+      total += markSettings.mcMark;
+      if (ans === q.correct) score += markSettings.mcMark;
+    }
+  });
+
+  const percent = total > 0 ? Math.round((score / total) * 100) : 0;
+
+  const result = {
+    id: "R" + Date.now(),
+    username: currentStudent.username,
+    name: currentStudent.first + " " + currentStudent.father,
+    grade: currentStudent.grade,
+    section: currentStudent.section || "",
+    subject: examSettings.subject,
+    score,
+    total,
+    percent,
+    questions: examQuestions,
+    answers
+  };
+
+  let results = JSON.parse(localStorage.getItem("wgss_results") || "[]");
+  results.push(result);
+  localStorage.setItem("wgss_results", JSON.stringify(results));
+
+  /* CLEAR SAVED STATE AFTER SUBMISSION */
+  localStorage.removeItem("wgss_exam_state");
+
+  examForm.querySelector("button[type='submit']").disabled = true;
+  examMsg.style.color = "green";
+  examMsg.textContent = "Your exam has been submitted. Thank you.";
+
+  setTimeout(() => { window.location.reload(); }, 5000);
+}
+
+/* ===========================
+UTILS
+=========================== */
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+</script>
+</body>
+</html>

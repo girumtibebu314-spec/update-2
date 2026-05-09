@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WGSS Exam Admin</title>
+<style>
+body { margin:0; font-family:Arial, sans-serif; background:#eef1f7; }
+header { background:#1a3d8f; color:#fff; padding:10px 20px; display:flex; align-items:center; }
+header img { height:50px; margin-right:10px; }
+header h1 { margin:0; font-size:20px; }
+.layout { display:flex; height:calc(100vh - 70px); }
+.sidebar {
+  width:220px; background:#1f2937; color:#fff; padding-top:10px;
+  display:flex; flex-direction:column;
+}
+.sidebar h3 { margin:10px 15px; font-size:14px; text-transform:uppercase; opacity:0.7; }
+.nav-item { padding:10px 15px; cursor:pointer; font-size:14px; }
+.nav-item:hover, .nav-item.active { background:#374151; }
+.content { flex:1; padding:20px; overflow-y:auto; }
+h2 { margin-top:0; color:#1a3d8f; }
+.hidden { display:none; }
+.field { margin-bottom:10px; }
+label { display:block; font-size:13px; margin-bottom:3px; }
+input[type="text"], input[type="password"], input[type="number"], select {
+  width:100%; padding:7px; border-radius:4px; border:1px solid #bbb; box-sizing:border-box;
+  font-size:13px;
+}
+button {
+  background:#1a3d8f; color:#fff; border:none;
+  padding:7px 14px; border-radius:4px; cursor:pointer;
+  font-size:13px; margin:3px 2px;
+}
+button.danger { background:#b91c1c; }
+button.secondary { background:#4b5563; }
+table {
+  width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;
+}
+th, td {
+  border:1px solid #ddd; padding:6px 5px; text-align:left;
+}
+th { background:#e5e7eb; }
+.badge {
+  display:inline-block; padding:2px 6px; border-radius:3px; font-size:11px;
+}
+.badge.active { background:#16a34a; color:#fff; }
+.badge.inactive { background:#9ca3af; color:#111827; }
+#resultBox {
+  white-space:pre-wrap; background:#f5f5f5; padding:10px;
+  border-radius:6px; border:1px solid #ccc; margin-top:10px;
+  max-height:300px; overflow-y:auto; font-family:Consolas, monospace; font-size:12px;
+}
+.login-panel {
+  max-width:350px; margin:40px auto; background:#fff; padding:20px;
+  border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.15);
+}
+.eye-btn {
+  cursor:pointer; font-size:14px; padding:2px 6px;
+  background:#ddd; border-radius:4px; margin-left:4px;
+}
+</style>
+</head>
+<body>
+<header>
+  <img src="wolkite.jpeg" alt="Logo">
+  <h1>Wolkite Exam Admin Dashboard</h1>
+</header>
+
+<!-- ADMIN LOGIN -->
+<div id="adminLoginSection" class="login-panel">
+  <h2>Admin Login</h2>
+  <div class="field">
+    <label>Admin Password</label>
+    <div style="display:flex;align-items:center;">
+      <input type="password" id="adminPassword" style="flex:1;">
+      <button type="button" onclick="toggleAdminPassword()" style="margin-left:5px;">👁</button>
+    </div>
+  </div>
+  <button onclick="adminLogin()">Login</button>
+  <p id="adminLoginError" style="color:red; font-size:13px;"></p>
+</div>
+
+<div id="app" class="layout hidden">
+  <div class="sidebar">
+    <h3>Navigation</h3>
+    <div class="nav-item active" onclick="showPage('students', this)">Students</div>
+    <div class="nav-item" onclick="showPage('subjects', this)">Subjects</div>
+    <div class="nav-item" onclick="showPage('questions', this)">Question Bank</div>
+    <div class="nav-item" onclick="showPage('exam', this)">Exam Settings</div>
+    <div class="nav-item" onclick="showPage('marks', this)">Mark Settings</div>
+    <div class="nav-item" onclick="showPage('results', this)">Results</div>
+    <div class="nav-item" onclick="showPage('system', this)">System</div>
+  </div>
+
+  <div class="content"><!-- STUDENTS PAGE -->
+    <div id="page-students">
+      <h2>Students</h2>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <!-- ADD STUDENT -->
+        <div style="flex:1; min-width:260px;">
+          <h3>Add / Edit Student</h3>
+          <div class="field">
+            <label>First Name (CAPITAL)</label>
+            <input type="text" id="stuFirst">
+          </div>
+          <div class="field">
+            <label>Father Name (CAPITAL)</label>
+            <input type="text" id="stuFather">
+          </div>
+          <div class="field">
+            <label>Grand Father Name (CAPITAL)</label>
+            <input type="text" id="stuGrand">
+          </div>
+          <div class="field">
+            <label>Gender</label>
+            <select id="stuGender">
+              <option value="">Select</option>
+              <option>MALE</option>
+              <option>FEMALE</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Grade Level</label>
+            <select id="stuGrade">
+              <option value="">Select</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Section</label>
+            <input type="text" id="stuSection" placeholder="10A">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input type="text" id="stuPhone" placeholder="09...">
+          </div>
+          <div class="field">
+            <label>Photo</label>
+            <input type="file" id="stuPhoto" accept="image/*">
+          </div>
+          <div class="field">
+            <label>Active</label>
+            <select id="stuActive">
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+          <button onclick="saveStudent()">Save Student</button>
+          <button class="secondary" onclick="clearStudentForm()">Clear</button>
+          <p id="studentStatus" style="font-size:13px;"></p>
+        </div>
+
+        <!-- STUDENT LIST -->
+        <div style="flex:2; min-width:320px;">
+          <h3>Student List</h3>
+          <table id="studentsTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Name</th>
+                <th>Grade</th>
+                <th>Section</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <button onclick="downloadStudentListCSV()">Export Students (CSV)</button>
+          <input type="file" id="importStudentsFile" accept=".csv" style="display:none;" onchange="importStudentsCSV(event)">
+          <button onclick="document.getElementById('importStudentsFile').click()">Import Students (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBJECTS PAGE -->
+    <div id="page-subjects" class="hidden">
+      <h2>Subjects</h2>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:260px;">
+          <h3>Add / Edit Subject</h3>
+          <div class="field">
+            <label>Subject Name</label>
+            <input type="text" id="subName">
+          </div>
+          <button onclick="saveSubject()">Save Subject</button>
+          <button class="secondary" onclick="clearSubjectForm()">Clear</button>
+          <p id="subjectStatus" style="font-size:13px;"></p>
+        </div>
+        <div style="flex:2; min-width:320px;">
+          <h3>Subject List</h3>
+          <table id="subjectsTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Subject</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION BANK PAGE -->
+    <div id="page-questions" class="hidden">
+      <h2>Question Bank</h2>
+      <div style="display:flex; gap:20px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:260px;">
+          <h3>Add Question</h3>
+          <div class="field">
+            <label>Grade</label>
+            <select id="qGrade">
+              <option value="">Select</option>
+              <option value="9">Grade 9</option>
+              <option value="10">Grade 10</option>
+              <option value="11">Grade 11</option>
+              <option value="12">Grade 12</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Subject</label>
+            <select id="qSubject"></select>
+          </div>
+          <div class="field">
+            <label>Type</label>
+            <select id="qType">
+              <option value="TF">True / False</option>
+              <option value="MC">Multiple Choice</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Question Text</label>
+            <input type="text" id="qText">
+          </div>
+          <div id="mcOptions" class="hidden">
+            <div class="field">
+              <label>Option A</label>
+              <input type="text" id="qA">
+            </div>
+            <div class="field">
+              <label>Option B</label>
+              <input type="text" id="qB">
+            </div>
+            <div class="field">
+              <label>Option C</label>
+              <input type="text" id="qC">
+            </div>
+            <div class="field">
+              <label>Option D</label>
+              <input type="text" id="qD">
+            </div>
+          </div>
+          <div class="field">
+            <label>Correct Answer</label>
+            <select id="qCorrect">
+              <option value="">Select</option>
+              <option value="T">True</option>
+              <option value="F">False</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
+          </div>
+          <button onclick="saveQuestion()">Save Question</button>
+          <button class="secondary" onclick="clearQuestionForm()">Clear</button>
+          <p id="questionStatus" style="font-size:13px;"></p>
+        </div>
+
+        <div style="flex:2; min-width:320px;">
+          <h3>Questions</h3>
+          <table id="questionsTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Grade</th>
+                <th>Subject</th>
+                <th>Type</th>
+                <th>Question</th>
+                <th>Correct</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXAM SETTINGS PAGE -->
+    <div id="page-exam" class="hidden">
+      <h2>Exam Settings</h2>
+      <div class="field">
+        <label>Exam Grade</label>
+        <select id="examGrade">
+          <option value="">Select</option>
+          <option value="9">Grade 9</option>
+          <option value="10">Grade 10</option>
+          <option value="11">Grade 11</option>
+          <option value="12">Grade 12</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Exam Subject</label>
+        <select id="examSubject"></select>
+      </div>
+      <div class="field">
+        <label>Exam Duration (minutes)</label>
+        <input type="number" id="examDuration" min="1" value="40">
+      </div>
+      <button onclick="saveExamSettings()">Save Exam Settings</button>
+      <p id="examStatus" style="font-size:13px;"></p>
+
+      <hr style="margin:20px 0;">
+
+      <h3>Extra Time Control</h3>
+      <div class="field">
+        <label>Extra Time (minutes)</label>
+        <input type="number" id="extraTime" min="1" value="5">
+      </div>
+      <button onclick="applyExtraTime()">Apply Extra Time</button>
+      <p id="extraTimeStatus" style="font-size:13px;"></p>
+    </div><!-- MARK SETTINGS PAGE -->
+    <div id="page-marks" class="hidden">
+      <h2>Mark Settings</h2>
+      <div class="field">
+        <label>Mark per True/False Question</label>
+        <input type="number" id="tfMark" min="0" step="0.1">
+      </div>
+      <div class="field">
+        <label>Mark per Multiple Choice Question</label>
+        <input type="number" id="mcMark" min="0" step="0.1">
+      </div>
+      <button onclick="saveMarkSettings()">Save Mark Settings</button>
+      <p id="markStatus" style="font-size:13px;"></p>
+    </div>
+
+    <!-- RESULTS PAGE -->
+    <div id="page-results" class="hidden">
+      <h2>Results</h2>
+      <button onclick="loadResults()">Refresh Results</button>
+      <table id="resultsTable" style="margin-top:10px;">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Username</th>
+            <th>Name</th>
+            <th>Grade</th>
+            <th>Section</th>
+            <th>Subject</th>
+            <th>Score</th>
+            <th>Percent</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="resultBox"></div>
+    </div>
+
+    <!-- SYSTEM PAGE -->
+    <div id="page-system" class="hidden">
+      <h2>System</h2>
+
+      <button onclick="exportSystemData()">Export System Data</button>
+      <input type="file" id="importFile" accept=".json" style="margin-top:10px;display:none;" onchange="importSystemData(event)">
+      <button onclick="document.getElementById('importFile').click()">Import System Data</button>
+
+      <br><br>
+
+      <button class="danger" onclick="resetAll()">Reset ALL Data</button>
+      <p style="font-size:13px; color:#b91c1c; max-width:500px;">
+        This clears students, subjects, questions, exam settings, mark settings, and results from this browser,
+        and also clears stored photos from IndexedDB.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================
+GLOBALS
+=========================== */
+const ADMIN_PASSWORD = "@Girum1065";
+let students = [];
+let questions = [];
+let subjects = [];
+let markSettings = { tfMark: 1, mcMark: 1 };
+let examSettings = { grade: "", subject: "", duration: 40 };
+let editingStudentId = null;
+let editingQuestionId = null;
+let editingSubjectIndex = null;
+let db = null;
+
+/* ===========================
+INDEXEDDB FOR PHOTOS
+=========================== */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    if (db) return resolve(db);
+    const request = indexedDB.open("wgss_exam_db", 1);
+    request.onupgradeneeded = (e) => {
+      const _db = e.target.result;
+      if (!_db.objectStoreNames.contains("student_photos")) {
+        _db.createObjectStore("student_photos", { keyPath: "id" });
+      }
+    };
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      resolve(db);
+    };
+    request.onerror = (e) => reject(e);
+  });
+}
+
+function savePhotoToDB(id, dataUrl) {
+  if (!dataUrl) return;
+  openDB().then(db => {
+    const tx = db.transaction("student_photos", "readwrite");
+    const store = tx.objectStore("student_photos");
+    store.put({ id, data: dataUrl });
+  });
+}
+
+function loadPhotoFromDB(id) {
+  return new Promise((resolve) => {
+    if (!id) return resolve(null);
+    openDB().then(db => {
+      const tx = db.transaction("student_photos", "readonly");
+      const store = tx.objectStore("student_photos");
+      const req = store.get(id);
+      req.onsuccess = () => {
+        resolve(req.result ? req.result.data : null);
+      };
+      req.onerror = () => resolve(null);
+    });
+  });
+}
+
+function deleteAllPhotosFromDB() {
+  return new Promise((resolve) => {
+    const delReq = indexedDB.deleteDatabase("wgss_exam_db");
+    delReq.onsuccess = () => { db = null; resolve(); };
+    delReq.onerror = () => resolve();
+    delReq.onblocked = () => resolve();
+  });
+}
+
+/* ===========================
+ADMIN LOGIN
+=========================== */
+function toggleAdminPassword() {
+  const p = document.getElementById("adminPassword");
+  p.type = (p.type === "password") ? "text" : "password";
+}
+
+function adminLogin() {
+  const pw = document.getElementById("adminPassword").value.trim();
+  if (pw !== ADMIN_PASSWORD) {
+    document.getElementById("adminLoginError").textContent = "Wrong admin password.";
+    return;
+  }
+  document.getElementById("adminLoginSection").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  loadSubjects();
+  initSubjectDropdowns();
+  loadAll();
+  loadDefaultQuestions123();
+  renderQuestions();
+}
+
+/* ===========================
+NAVIGATION
+=========================== */
+function showPage(pageId, el) {
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  el.classList.add("active");
+
+  ["students","subjects","questions","exam","marks","results","system"].forEach(id => {
+    document.getElementById("page-" + id).classList.add("hidden");
+  });
+
+  document.getElementById("page-" + pageId).classList.remove("hidden");
+}
+
+/* ===========================
+SUBJECTS
+=========================== */
+function loadSubjects() {
+  subjects = JSON.parse(localStorage.getItem("wgss_subjects") || "[]");
+  if (!Array.isArray(subjects)) subjects = [];
+
+  if (subjects.length === 0) {
+    subjects = ["ICT","Mathematics","Physics","Chemistry","Biology","English"];
+    saveSubjects();
+  }
+}
+
+function saveSubjects() {
+  localStorage.setItem("wgss_subjects", JSON.stringify(subjects));
+}
+
+function renderSubjects() {
+  const tbody = document.querySelector("#subjectsTable tbody");
+  tbody.innerHTML = "";
+
+  subjects.forEach((s, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${s}</td>
+      <td>
+        <button onclick="editSubject(${idx})">Edit</button>
+        <button class="danger" onclick="deleteSubject(${idx})">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  initSubjectDropdowns();
+}
+
+function saveSubject() {
+  const name = document.getElementById("subName").value.trim();
+  if (!name) {
+    setStatus("subjectStatus", "Subject name required.", true);
+    return;
+  }
+
+  if (editingSubjectIndex !== null) {
+    subjects[editingSubjectIndex] = name;
+    setStatus("subjectStatus", "Subject updated.", false);
+  } else {
+    if (subjects.includes(name)) {
+      setStatus("subjectStatus", "Subject already exists.", true);
+      return;
+    }
+    subjects.push(name);
+    setStatus("subjectStatus", "Subject added.", false);
+  }
+
+  saveSubjects();
+  renderSubjects();
+  clearSubjectForm();
+}
+
+function editSubject(idx) {
+  editingSubjectIndex = idx;
+  document.getElementById("subName").value = subjects[idx];
+  setStatus("subjectStatus", "Editing subject.", false);
+}
+
+function deleteSubject(idx) {
+  if (!confirm("Delete this subject?")) return;
+
+  const removed = subjects[idx];
+  subjects.splice(idx, 1);
+  saveSubjects();
+  renderSubjects();
+
+  questions = questions.filter(q => q.subject !== removed);
+  saveQuestions();
+  renderQuestions();
+}
+
+function clearSubjectForm() {
+  editingSubjectIndex = null;
+  document.getElementById("subName").value = "";
+  setStatus("subjectStatus", "", false);
+}
+
+function initSubjectDropdowns() {
+  const qSubject = document.getElementById("qSubject");
+  const examSubject = document.getElementById("examSubject");
+
+  if (!qSubject || !examSubject) return;
+
+  qSubject.innerHTML = "";
+  examSubject.innerHTML = "";
+
+  subjects.forEach(sub => {
+    const o1 = document.createElement("option");
+    o1.value = sub; o1.textContent = sub;
+    qSubject.appendChild(o1);
+
+    const o2 = document.createElement("option");
+    o2.value = sub; o2.textContent = sub;
+    examSubject.appendChild(o2);
+  });
+}
+
+/* ===========================
+LOAD ALL
+=========================== */
+function loadAll() {
+  students = JSON.parse(localStorage.getItem("wgss_students") || "[]");
+  questions = JSON.parse(localStorage.getItem("wgss_questions") || "[]");
+  markSettings = JSON.parse(localStorage.getItem("wgss_mark_settings") || '{"tfMark":1,"mcMark":1}');
+  examSettings = JSON.parse(localStorage.getItem("wgss_exam_settings") || '{"grade":"","subject":"","duration":40}');
+
+  renderStudents();
+  renderQuestions();
+  renderMarkSettings();
+  renderExamSettings();
+  renderSubjects();
+}/* ===========================
+STUDENTS
+=========================== */
+function generateUsername() {
+  let maxNum = 0;
+  students.forEach(s => {
+    const m = /STD(\d+)/.exec(s.username || "");
+    if (m) maxNum = Math.max(maxNum, parseInt(m[1], 10));
+  });
+  return "STD" + String(maxNum + 1).padStart(3, "0");
+}
+function generatePassword() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+function saveStudent() {
+  let first = document.getElementById("stuFirst").value.trim();
+  let father = document.getElementById("stuFather").value.trim();
+  let grand = document.getElementById("stuGrand").value.trim();
+  const gender = document.getElementById("stuGender").value;
+  const grade = document.getElementById("stuGrade").value;
+  const section = document.getElementById("stuSection").value.trim();
+  const phone = document.getElementById("stuPhone").value.trim();
+  const active = document.getElementById("stuActive").value === "true";
+  const photoFile = document.getElementById("stuPhoto").files[0] || null;
+
+  if (!first || !father || !grand || !grade) {
+    setStatus("studentStatus", "First, Father, Grand Father and Grade are required.", true);
+    return;
+  }
+  if (first !== first.toUpperCase() || father !== father.toUpperCase() || grand !== grand.toUpperCase()) {
+    setStatus("studentStatus", "Use CAPITAL letters for names.", true);
+    return;
+  }
+
+  function doSave(photoId, photoData) {
+    if (editingStudentId) {
+      const s = students.find(x => x.id === editingStudentId);
+      if (!s) return;
+      s.first = first;
+      s.father = father;
+      s.grand = grand;
+      s.gender = gender;
+      s.grade = grade;
+      s.section = section;
+      s.phone = phone;
+      s.active = active;
+      if (photoId) s.photoId = photoId;
+      setStatus("studentStatus", "Student updated.", false);
+    } else {
+      const username = generateUsername();
+      const password = generatePassword();
+      const id = "S" + Date.now();
+      const newPhotoId = photoId || null;
+      students.push({
+        id, username, password,
+        first, father, grand, gender, grade, section, phone, active,
+        photoId: newPhotoId
+      });
+      setStatus("studentStatus", "Student added. Username: " + username + " Password: " + password, false);
+    }
+    saveStudents();
+    renderStudents();
+    clearStudentForm();
+  }
+
+  if (photoFile) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      const photoId = "P" + Date.now();
+      savePhotoToDB(photoId, dataUrl);
+      doSave(photoId, dataUrl);
+    };
+    reader.readAsDataURL(photoFile);
+  } else {
+    let existingPhotoId = null;
+    if (editingStudentId) {
+      const s = students.find(x => x.id === editingStudentId);
+      existingPhotoId = s && s.photoId ? s.photoId : null;
+    }
+    doSave(existingPhotoId, null);
+  }
+}
+function saveStudents() {
+  localStorage.setItem("wgss_students", JSON.stringify(students));
+}
+function renderStudents() {
+  const tbody = document.querySelector("#studentsTable tbody");
+  tbody.innerHTML = "";
+  students.forEach((s, idx) => {
+    const tr = document.createElement("tr");
+    const rowId = "stu_photo_" + s.id;
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${s.username}</td>
+      <td>
+        <span id="pw_${s.id}" style="letter-spacing:2px;">******</span>
+        <span class="eye-btn" onclick="togglePassword('${s.id}', '${s.password}')">👁</span>
+      </td>
+      <td>
+        <img id="${rowId}" src="default.png"
+          style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:5px;vertical-align:middle;">
+        ${s.first} ${s.father} ${s.grand || ""}
+      </td>
+      <td>${s.grade}</td>
+      <td>${s.section}</td>
+      <td>${s.active ? '<span class="badge active">Active</span>' : '<span class="badge inactive">Inactive</span>'}</td>
+      <td>
+        <button onclick="editStudent('${s.id}')">Edit</button>
+        <button class="danger" onclick="deleteStudent('${s.id}')">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+    if (s.photoId) {
+      loadPhotoFromDB(s.photoId).then(dataUrl => {
+        if (dataUrl) {
+          const img = document.getElementById(rowId);
+          if (img) img.src = dataUrl;
+        }
+      });
+    }
+  });
+}
+function togglePassword(id, realPw) {
+  const el = document.getElementById("pw_" + id);
+  el.textContent = (el.textContent === "******") ? realPw : "******";
+}
+function editStudent(id) {
+  const s = students.find(x => x.id === id);
+  if (!s) return;
+  editingStudentId = id;
+  document.getElementById("stuFirst").value = s.first;
+  document.getElementById("stuFather").value = s.father;
+  document.getElementById("stuGrand").value = s.grand || "";
+  document.getElementById("stuGender").value = s.gender;
+  document.getElementById("stuGrade").value = s.grade;
+  document.getElementById("stuSection").value = s.section;
+  document.getElementById("stuPhone").value = s.phone;
+  document.getElementById("stuActive").value = s.active ? "true" : "false";
+  document.getElementById("stuPhoto").value = "";
+  setStatus("studentStatus", "Editing student " + s.username, false);
+}
+function deleteStudent(id) {
+  if (!confirm("Delete this student?")) return;
+  students = students.filter(s => s.id !== id);
+  saveStudents();
+  renderStudents();
+}
+function clearStudentForm() {
+  editingStudentId = null;
+  document.getElementById("stuFirst").value = "";
+  document.getElementById("stuFather").value = "";
+  document.getElementById("stuGrand").value = "";
+  document.getElementById("stuGender").value = "";
+  document.getElementById("stuGrade").value = "";
+  document.getElementById("stuSection").value = "";
+  document.getElementById("stuPhone").value = "";
+  document.getElementById("stuPhoto").value = "";
+  document.getElementById("stuActive").value = "true";
+  setStatus("studentStatus", "", false);
+}
+
+/* ===========================
+STUDENT CSV IMPORT/EXPORT
+=========================== */
+function importStudentsCSV(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split("\n").map(l => l.trim()).filter(l => l);
+    if (!lines.length) return;
+
+    lines.shift(); // header
+
+    lines.forEach(line => {
+      const cols = line.split(",").map(c => c.replace(/"/g, "").trim());
+      if (cols.length < 9) return;
+
+      const [
+        username, password, first, father, grand,
+        gender, grade, section, phone
+      ] = cols;
+
+      const finalUsername = username || generateUsername();
+      const finalPassword = password || generatePassword();
+
+      students.push({
+        id: "S" + Date.now() + Math.random(),
+        username: finalUsername,
+        password: finalPassword,
+        first,
+        father,
+        grand,
+        gender,
+        grade,
+        section,
+        phone,
+        active: true,
+        photoId: null
+      });
+    });
+
+    saveStudents();
+    renderStudents();
+    alert("Students imported successfully!");
+  };
+
+  reader.readAsText(file);
+}
+
+function downloadStudentListCSV() {
+  if (!students.length) {
+    alert("No students to export.");
+    return;
+  }
+
+  let csv = "Username,Password,First,Father,Grand,Gender,Grade,Section,Phone,Active\n";
+
+  students.forEach(s => {
+    csv += [
+      s.username,
+      s.password,
+      s.first,
+      s.father,
+      s.grand,
+      s.gender,
+      s.grade,
+      s.section,
+      s.phone,
+      s.active ? "Active" : "Inactive"
+    ].map(v => `"${(v || "").toString().replace(/"/g,'""')}"`).join(",") + "\n";
+  });
+
+  const blob = new Blob([csv], { type:"text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "students.csv";
+  a.click();
+}
+
+/* ===========================
+QUESTIONS
+=========================== */
+document.getElementById("qType").addEventListener("change", function() {
+  const v = this.value;
+  document.getElementById("mcOptions").classList.toggle("hidden", v !== "MC");
+});
+function saveQuestions() {
+  localStorage.setItem("wgss_questions", JSON.stringify(questions));
+}
+function renderQuestions() {
+  const tbody = document.querySelector("#questionsTable tbody");
+  tbody.innerHTML = "";
+  questions.forEach((q, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${q.grade}</td>
+      <td>${q.subject}</td>
+      <td>${q.type}</td>
+      <td>${q.question}</td>
+      <td>${q.correct}</td>
+      <td>
+        <button onclick="editQuestion(${idx})">Edit</button>
+        <button class="danger" onclick="deleteQuestion(${idx})">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+function saveQuestion() {
+  const grade = document.getElementById("qGrade").value;
+  const subject = document.getElementById("qSubject").value;
+  const type = document.getElementById("qType").value;
+  const text = document.getElementById("qText").value.trim();
+  const correct = document.getElementById("qCorrect").value;
+  let A = "", B = "", C = "", D = "";
+  if (type === "MC") {
+    A = document.getElementById("qA").value.trim();
+    B = document.getElementById("qB").value.trim();
+    C = document.getElementById("qC").value.trim();
+    D = document.getElementById("qD").value.trim();
+    if (!A || !B || !C || !D) {
+      setStatus("questionStatus", "All options A-D are required for MC.", true);
+      return;
+    }
+  }
+  if (!grade || !subject || !text || !correct) {
+    setStatus("questionStatus", "Grade, subject, question and correct answer are required.", true);
+    return;
+  }
+  if (editingQuestionId !== null) {
+    const q = questions[editingQuestionId];
+    q.grade = grade;
+    q.subject = subject;
+    q.type = type;
+    q.question = text;
+    q.correct = correct;
+    q.A = A; q.B = B; q.C = C; q.D = D;
+    setStatus("questionStatus", "Question updated.", false);
+  } else {
+    questions.push({ grade, subject, type, question:text, correct, A,B,C,D });
+    setStatus("questionStatus", "Question added.", false);
+  }
+  saveQuestions();
+  renderQuestions();
+  clearQuestionForm();
+}
+function editQuestion(idx) {
+  const q = questions[idx];
+  editingQuestionId = idx;
+  document.getElementById("qGrade").value = q.grade;
+  document.getElementById("qSubject").value = q.subject;
+  document.getElementById("qType").value = q.type;
+  document.getElementById("qText").value = q.question;
+  document.getElementById("qCorrect").value = q.correct;
+  if (q.type === "MC") {
+    document.getElementById("mcOptions").classList.remove("hidden");
+    document.getElementById("qA").value = q.A || "";
+    document.getElementById("qB").value = q.B || "";
+    document.getElementById("qC").value = q.C || "";
+    document.getElementById("qD").value = q.D || "";
+  } else {
+    document.getElementById("mcOptions").classList.add("hidden");
+    document.getElementById("qA").value = "";
+    document.getElementById("qB").value = "";
+    document.getElementById("qC").value = "";
+    document.getElementById("qD").value = "";
+  }
+  setStatus("questionStatus", "Editing question.", false);
+}
+function deleteQuestion(idx) {
+  if (!confirm("Delete this question?")) return;
+  questions.splice(idx, 1);
+  saveQuestions();
+  renderQuestions();
+}
+function clearQuestionForm() {
+  editingQuestionId = null;
+  document.getElementById("qGrade").value = "";
+  if (subjects.length > 0) document.getElementById("qSubject").value = subjects[0];
+  document.getElementById("qType").value = "TF";
+  document.getElementById("qText").value = "";
+  document.getElementById("qA").value = "";
+  document.getElementById("qB").value = "";
+  document.getElementById("qC").value = "";
+  document.getElementById("qD").value = "";
+  document.getElementById("qCorrect").value = "";
+  document.getElementById("mcOptions").classList.add("hidden");
+  setStatus("questionStatus", "", false);
+}
+
+/* ===========================
+EXAM SETTINGS
+=========================== */
+function renderExamSettings() {
+  document.getElementById("examGrade").value = examSettings.grade || "";
+  if (subjects.length > 0) {
+    document.getElementById("examSubject").value = examSettings.subject || subjects[0];
+  }
+  document.getElementById("examDuration").value = examSettings.duration || 40;
+}
+function saveExamSettings() {
+  const grade = document.getElementById("examGrade").value;
+  const subject = document.getElementById("examSubject").value;
+  const duration = parseInt(document.getElementById("examDuration").value, 10) || 40;
+  if (!grade || !subject) {
+    setStatus("examStatus", "Grade and subject are required.", true);
+    return;
+  }
+  examSettings = { grade, subject, duration };
+  localStorage.setItem("wgss_exam_settings", JSON.stringify(examSettings));
+  setStatus("examStatus", "Exam settings saved.", false);
+}
+
+/* EXTRA TIME CONTROL */
+function applyExtraTime() {
+  const extra = parseInt(document.getElementById("extraTime").value, 10);
+  if (isNaN(extra) || extra <= 0) {
+    setStatus("extraTimeStatus", "Enter valid minutes.", true);
+    return;
+  }
+  localStorage.setItem("wgss_exam_extra_time", String(extra));
+  setStatus("extraTimeStatus", "Extra time applied: " + extra + " minutes.", false);
+}
+
+/* ===========================
+MARK SETTINGS
+=========================== */
+function renderMarkSettings() {
+  document.getElementById("tfMark").value = markSettings.tfMark;
+  document.getElementById("mcMark").value = markSettings.mcMark;
+}
+function saveMarkSettings() {
+  const tf = parseFloat(document.getElementById("tfMark").value);
+  const mc = parseFloat(document.getElementById("mcMark").value);
+  if (isNaN(tf) || isNaN(mc)) {
+    setStatus("markStatus", "Both marks must be numbers.", true);
+    return;
+  }
+  markSettings = { tfMark: tf, mcMark: mc };
+  localStorage.setItem("wgss_mark_settings", JSON.stringify(markSettings));
+  setStatus("markStatus", "Mark settings saved.", false);
+}
+
+/* ===========================
+RESULTS
+=========================== */
+function loadResults() {
+  const results = JSON.parse(localStorage.getItem("wgss_results") || "[]");
+  const tbody = document.querySelector("#resultsTable tbody");
+  tbody.innerHTML = "";
+  results.forEach((r, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td>${r.username}</td>
+      <td>${r.name}</td>
+      <td>${r.grade}</td>
+      <td>${r.section}</td>
+      <td>${r.subject}</td>
+      <td>${r.score}/${r.total}</td>
+      <td>${r.percent}%</td>
+      <td>
+        <button onclick='viewResult("${r.id}")'>View</button>
+        <button onclick='downloadFullResult("${r.id}")'>Download</button>
+        <button class="danger" onclick='deleteResult("${r.id}")'>Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+function viewResult(id) {
+  const results = JSON.parse(localStorage.getItem("wgss_results") || "[]");
+  const r = results.find(x => x.id === id);
+  if (!r) return;
+  let text = "";
+  text += "Result ID: " + r.id + "\n";
+  text += "Name: " + r.name + "\n";
+  text += "Username: " + r.username + "\n";
+  text += "Grade: " + r.grade + " Section: " + r.section + "\n";
+  text += "Subject: " + r.subject + "\n";
+  text += "Score: " + r.score + " / " + r.total + " (" + r.percent + "%)\n";
+  text += "\nQuestions:\n";
+  r.questions.forEach((q, i) => {
+    text += "\nQ" + (i+1) + ". " + q.question + "\n";
+    text += "Correct: " + q.correct + " | Student: " + (r.answers[i] || "") + "\n";
+  });
+  document.getElementById("resultBox").textContent = text;
+}
+function deleteResult(id) {
+  if (!confirm("Delete this result permanently?")) return;
+  let results = JSON.parse(localStorage.getItem("wgss_results") || "[]");
+  results = results.filter(r => r.id !== id);
+  localStorage.setItem("wgss_results", JSON.stringify(results));
+  loadResults();
+  document.getElementById("resultBox").textContent = "";
+}
+function downloadFullResult(id) {
+  const results = JSON.parse(localStorage.getItem("wgss_results") || "[]");
+  const r = results.find(x => x.id === id);
+  if (!r) return;
+  let text = "";
+  text += "WGSS Exam Result\n";
+  text += "====================\n\n";
+  text += "Result ID: " + r.id + "\n";
+  text += "Name: " + r.name + "\n";
+  text += "Username: " + r.username + "\n";
+  text += "Grade: " + r.grade + " Section: " + r.section + "\n";
+  text += "Subject: " + r.subject + "\n";
+  text += "Score: " + r.score + " / " + r.total + "\n";
+  text += "Percent: " + r.percent + "%\n\n";
+  text += "Questions & Answers\n";
+  text += "--------------------\n\n";
+  r.questions.forEach((q, i) => {
+    text += "Q" + (i+1) + ". " + q.question + "\n";
+    text += "Correct Answer: " + q.correct + "\n";
+    text += "Student Answer: " + (r.answers[i] || "") + "\n\n";
+  });
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = r.username + "_" + r.subject + "_result.txt";
+  a.click();
+}
+
+/* ===========================
+SYSTEM: RESET + EXPORT/IMPORT
+=========================== */
+function resetAll() {
+  if (!confirm("This will delete ALL data (students, subjects, questions, marks, exam settings, results, photos). Continue?")) return;
+  localStorage.removeItem("wgss_students");
+  localStorage.removeItem("wgss_subjects");
+  localStorage.removeItem("wgss_questions");
+  localStorage.removeItem("wgss_mark_settings");
+  localStorage.removeItem("wgss_exam_settings");
+  localStorage.removeItem("wgss_results");
+  localStorage.removeItem("wgss_default123_loaded");
+  localStorage.removeItem("wgss_exam_state");
+  localStorage.removeItem("wgss_exam_extra_time");
+  deleteAllPhotosFromDB().then(() => {
+    alert("All data cleared.");
+    location.reload();
+  });
+}
+
+async function exportSystemData() {
+  const db = await openDB();
+  const tx = db.transaction("student_photos", "readonly");
+  const store = tx.objectStore("student_photos");
+  const photos = {};
+  return new Promise((resolve) => {
+    const req = store.openCursor();
+    req.onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (cursor) {
+        photos[cursor.key] = cursor.value.data;
+        cursor.continue();
+      } else {
+        const data = {
+          students,
+          subjects,
+          questions,
+          markSettings,
+          examSettings,
+          results: JSON.parse(localStorage.getItem("wgss_results") || "[]"),
+          photos
+        };
+        const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "wgss_backup.json";
+        a.click();
+        resolve();
+      }
+    };
+  });
+}
+
+async function importSystemData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const data = JSON.parse(text);
+
+  localStorage.setItem("wgss_students", JSON.stringify(data.students || []));
+  localStorage.setItem("wgss_subjects", JSON.stringify(data.subjects || []));
+  localStorage.setItem("wgss_questions", JSON.stringify(data.questions || []));
+  localStorage.setItem("wgss_mark_settings", JSON.stringify(data.markSettings || {}));
+  localStorage.setItem("wgss_exam_settings", JSON.stringify(data.examSettings || {}));
+  localStorage.setItem("wgss_results", JSON.stringify(data.results || []));
+  localStorage.setItem("wgss_default123_loaded", "yes");
+
+  await deleteAllPhotosFromDB();
+  const db = await openDB();
+  const tx = db.transaction("student_photos", "readwrite");
+  const store = tx.objectStore("student_photos");
+  if (data.photos) {
+    for (const id in data.photos) {
+      store.put({ id, data: data.photos[id] });
+    }
+  }
+  alert("System data imported successfully!");
+  location.reload();
+}
+
+/* ===========================
+DEFAULT 123 QUESTIONS (GRADE 10 ICT)
+=========================== */
+function loadDefaultQuestions123() {
+  if (localStorage.getItem("wgss_default123_loaded")) return;
+
+  const defaults = [
+    // PART I — TRUE/FALSE
+    { q: "Privacy is concerned with safeguarding and respecting people’s rights to manage their data.", c: "T" },
+    { q: "Data privacy prevents unauthorized access by third parties.", c: "T" },
+    { q: "Computer worm is a self-replicating malicious program that spreads through networks.", c: "T" },
+    { q: "Computer virus infects files and programs and can make them non-functional.", c: "T" },
+    { q: "Malware monitors your online behavior without permission.", c: "T" },
+    { q: "Firewall monitors network traffic and blocks or permits based on rules.", c: "T" },
+    { q: "Standard users cannot access other users’ personal files.", c: "T" },
+    { q: "Only one guest account can exist on a computer.", c: "T" },
+    { q: "Cyber-attacks can cause electrical shutdowns and military failures.", c: "T" },
+    { q: "Algorithm is a step-by-step process for solving a problem.", c: "T" },
+    { q: "Algorithm is difficult to understand.", c: "F" },
+    { q: "A program is a set of instructions for a computer.", c: "T" },
+
+    // PART II — MULTIPLE CHOICE
+    { q: "Computerized method combining text, audio, video, graphics, animation.", A:"Multiprocessor",B:"Multithreading",C:"Word processor",D:"Multimedia", c:"D" },
+    { q: "Most popular format for storing/downloading music.", A:"AIFF",B:"MPEG Layer-4",C:"WMA",D:"RA", c:"C" },
+    { q: "Art of creating moving images using computers.", A:"Computer animation",B:"Image editing",C:"Graphics",D:"Movie maker", c:"A" },
+    { q: "Best example of hypermedia.", A:"World Wide Web",B:"Hardware",C:"Printout",D:"None", c:"A" },
+    { q: "Not a feature of multimedia authoring tools.", A:"Editing",B:"Organizing",C:"Interactivity",D:"Complex branching", c:"D" },
+    { q: "Common area of multimedia application.", A:"Marketing",B:"Entertainment",C:"Home",D:"All", c:"D" },
+    { q: "TIFF stands for:", A:"Transitional Image File Format",B:"Total Inclusion File Format",C:"Tagged Interchange File Format",D:"Temporary Instruction File Format", c:"C" },
+    { q: "Hardware used in multimedia authoring.", A:"Computer",B:"Scanner",C:"Sound recorder",D:"All", c:"D" },
+    { q: "Broad term for creating/manipulating digital audio-visual files.", A:"Authoring",B:"Production",C:"Presentation",D:"All", c:"D" },
+    { q: "Not a multimedia authoring package.", A:"Authorware",B:"Scanner",C:"Adobe Premier",D:"Flash", c:"B" },
+    { q: "Malicious act corrupting or stealing data.", A:"Virus",B:"Worms",C:"Security threat",D:"Security guard", c:"C" },
+    { q: "User account with full access.", A:"Administrators",B:"Guest",C:"Standard",D:"Private", c:"A" },
+    { q: "Software that detects viruses.", A:"Malware",B:"Adware",C:"Antivirus",D:"Both B and C", c:"C" },
+    { q: "Characteristic of algorithm.", A:"Clear",B:"Well-defined inputs",C:"Well-defined outputs",D:"All", c:"D" },
+    { q: "Not a disadvantage of algorithm.", A:"Time-consuming",B:"Branching difficult",C:"Stepwise representation",D:"None", c:"C" }
+  ];
+
+  defaults.forEach(d => {
+    if (d.A) {
+      questions.push({
+        grade: "10",
+        subject: "ICT",
+        type: "MC",
+        question: d.q,
+        A: d.A, B: d.B, C: d.C, D: d.D,
+        correct: d.c
+      });
+    } else {
+      questions.push({
+        grade: "10",
+        subject: "ICT",
+        type: "TF",
+        question: d.q,
+        correct: d.c
+      });
+    }
+  });
+
+  saveQuestions();
+  localStorage.setItem("wgss_default123_loaded", "yes");
+}
+
+/* ===========================
+UTIL
+=========================== */
+function setStatus(id, msg, isError) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.color = isError ? "red" : "green";
+}
+</script>
+</body>
+</html>
